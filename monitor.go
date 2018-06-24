@@ -29,41 +29,55 @@ import (
 )
 
 type taskMonitor struct {
-	scheduleChan chan scheduledCancel
+	scheduleStop chan scheduledCancel
+	cancelStop   chan scheduledCancel
 	terminate    chan os.Signal
 	queue        []scheduledCancel
 }
 
 type scheduledCancel struct {
-	name      string
-	cancelCmd string
+	cmd       string
 	startTime time.Time
 	timeout   time.Duration
 }
 
 func newTaskMonitor() *taskMonitor {
 	monitor := taskMonitor{
-		scheduleChan: make(chan scheduledCancel),
+		scheduleStop: make(chan scheduledCancel),
+		cancelStop:   make(chan scheduledCancel),
 		terminate:    make(chan os.Signal, 1),
 		queue:        make([]scheduledCancel, 0)}
 	return &monitor
 }
 
-func (m taskMonitor) AddTask(name string, cancelCmd string, timeout uint16) {
-	newTask := scheduledCancel{name, cancelCmd, time.Now(), time.Duration(timeout) * time.Second}
-	m.scheduleChan <- newTask
+func (m taskMonitor) ScheduleTaskToStop(cancelCmd string, timeout uint16) {
+	taskToStop := scheduledCancel{cancelCmd, time.Now(), time.Duration(timeout) * time.Second}
+	m.scheduleStop <- taskToStop
+}
+
+func (m taskMonitor) CancelTask(cmd string) {
+	cancelTask := scheduledCancel{cmd, time.Time{}, 0}
+	m.cancelStop <- cancelTask
 }
 
 func (m taskMonitor) Process() {
 	const PollPeriod = 5
 	for {
 		select {
-		case res := <-m.scheduleChan:
-			m.queue = append(m.queue, res)
+		case task := <-m.scheduleStop:
+			m.queue = append(m.queue, task)
+		case task := <-m.cancelStop:
+			tmp := m.queue[:0]
+			for _, p := range m.queue {
+				if p.cmd != task.cmd {
+					tmp = append(tmp, p)
+				}
+			}
+			m.queue = tmp
 		case <-m.terminate:
 			if len(m.queue) > 0 {
 				for _, p := range m.queue {
-					runTask(p.cancelCmd)
+					runTask(p.cmd)
 				}
 			}
 			os.Exit(0)
@@ -73,7 +87,7 @@ func (m taskMonitor) Process() {
 				if time.Since(p.startTime) > p.timeout {
 					tmp = append(tmp, p)
 				} else {
-					runTask(p.cancelCmd)
+					runTask(p.cmd)
 				}
 			}
 			m.queue = tmp
