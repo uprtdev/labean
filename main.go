@@ -80,8 +80,9 @@ func main() {
 
 	http.Handle("/", handler{env, defaultHandler})
 	for _, cmd := range config.Tasks {
-		http.Handle("/"+cmd.ID+"/", handler{env, taskHandler})
-		syslogger.Info(fmt.Sprintf("Adding handle for '%s' task...", cmd.ID))
+		url := fmt.Sprintf("%s/%s/", config.UrlPrefix, cmd.ID)
+		http.Handle(url, handler{env, taskHandler})
+		syslogger.Info(fmt.Sprintf("Adding handle for '%s' task... (%s)", cmd.ID, url))
 	}
 
 	go monitor.Process()

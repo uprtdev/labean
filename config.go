@@ -37,6 +37,7 @@ type appConfig struct {
 	ServerIP     string `json:"external_ip"`
 	TasksRaw     []task `json:"tasks"`
 	Tasks        map[string]*task
+	UrlPrefix    string `json:"url_prefix"`
 }
 
 func loadConfig(filename string) (newConfig *appConfig, err error) {
@@ -73,5 +74,9 @@ func loadConfig(filename string) (newConfig *appConfig, err error) {
 		config.Tasks[strings.ToLower(cmd.ID)] = &config.TasksRaw[i]
 	}
 	config.TasksRaw = nil // we don't need it anymore
+
+	if config.UrlPrefix != "" && config.UrlPrefix[0] != '/' {
+		config.UrlPrefix = "/" + config.UrlPrefix
+	}
 	return &config, nil
 }
