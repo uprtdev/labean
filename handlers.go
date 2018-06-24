@@ -52,7 +52,6 @@ func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			w.Write(r)
 		}
-		return
 	}
 }
 
@@ -63,6 +62,7 @@ func defaultHandler(env *state, w http.ResponseWriter, r *http.Request) (result 
 	} else {
 		genericErr = errors.New("No such task")
 	}
+	env.log.Err(fmt.Sprintf("Bad request: '%s': %s", r.URL.Path, genericErr.Error()))
 	return
 }
 
@@ -73,7 +73,7 @@ func taskHandler(env *state, w http.ResponseWriter, r *http.Request) (result *ta
 	if env.config.RealIPHeader != "" {
 		clientIP = r.Header.Get(env.config.RealIPHeader)
 		if clientIP == "" {
-			genericErr = errors.New("Empty real IP header, looks like you misconfigured your frontend")
+			genericErr = errors.New("Empty real IP header, looks like you misconfigured your reverse-proxy")
 			return
 		}
 	}
