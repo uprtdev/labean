@@ -80,10 +80,7 @@ func (c task) Start(env *state, ip string) *taskResult {
 	cmd := prepareCommand(ip, env.config.ServerIP, c.TurnOn)
 	result := runTask(cmd)
 	result.Timeout = c.Timeout
-	if result.Retcode != 0 {
-		return &result
-	}
-	if c.Timeout != 0 {
+	if result.Retcode == 0 && c.Timeout != 0 {
 		cmd := prepareCommand(ip, env.config.ServerIP, c.TurnOff)
 		env.monitor.ScheduleTaskToStop(cmd, c.Timeout)
 	}
