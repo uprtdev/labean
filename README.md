@@ -62,35 +62,8 @@ Another important step of Labean installation is a configuration of  your fronte
 - add 'X-Real-IP" or similar header to HTTP request
 - pass request to Labean (runnign on another TCP port like 8080) for 'secret' URL
 
-I recommend to use Nginx for this. The simpliest variant of the config is here:
-```
-server {
-  listen 443 ssl http2;
-  ssl on;
-  server_name testserver.org;
-  ssl_certificate /etc/letsencrypt/live/testserver.org/fullchain.pem;
-  ssl_certificate_key /etc/letsencrypt/live/testserver.org/privkey.pem;
-  root /srv/www/funny_kittens/;
-  index index.html;
-
-  location ~ ^/secret/(.*) {
-    auth_basic      "Administrator Login";
-    auth_basic_user_file  /var/www/.htpasswd;
-    proxy_set_header  X-Real-IP  $remote_addr;
-    proxy_pass http://127.0.0.1:8080/$1;
-  }
-
-  # or, if you would like to use 'url_prefix' setting in Labean config file
-  # set "url_prefix" value to "secret"
-  # location /secret/ {
-  #   auth_basic      "Administrator Login";
-  #   auth_basic_user_file  /var/www/.htpasswd;
-  #   proxy_set_header  X-Real-IP  $remote_addr;
-  #   proxy_pass http://127.0.0.1:8080/;
-  # }
-}                            
-```
-You can find it in `examples` directory of the source tree.
+I recommend to use Nginx for this. 
+The simpliest variant of the config you can find it in `examples` directory of the source tree.
 Anyway, you can use any other webservers/reverse-proxies if you want.
 
 ### Config file
