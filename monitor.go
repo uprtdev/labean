@@ -84,7 +84,7 @@ func (m taskMonitor) Process() {
 		case <-time.After(PollPeriod * time.Second):
 			tmp := m.queue[:0]
 			for _, p := range m.queue {
-				if time.Since(p.startTime) > p.timeout {
+				if time.Since(p.startTime) < p.timeout {
 					tmp = append(tmp, p)
 				} else {
 					runTask(p.cmd)
