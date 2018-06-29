@@ -7,10 +7,10 @@ The primary purpose of port knocking is to prevent an attacker from scanning a s
 Another purpose is to disguise some services (e.g. VPN or proxy) running on the server. For example, the server receives connections on 443 port and acts as a usual HTTPS web server, but after knocking it will modify firewall rules to allow specified IP to connect to another service on the same port - for third-party observers (like corporate or ISP Deep-Packet-Inspection systems) it will look exactly like ordinary HTTPS.
 
 ### Why Labean?
-Classic implementations of port knockers (like [knockd](http://www.zeroflux.org/projects/knock)) allow client to open port or start services by generating a connection attempt on a set of prespecified closed ports. This is simple and usually reliable, but there are some tricky cases. First of all, this requires using special clients or scripts on the client device (including mobile gadgets or network routers). More significant problem is that all ports and protocols except standard 80 (HTTP) and 443 (HTTPS) can be banned on corporate or ISP firewall, so you can't use 'classic' knocking  in this case. So that's why Labean was created.
+Classic implementations of port knockers (like [knockd](http://www.zeroflux.org/projects/knock)) allow a client to open port or start services by generating a connection attempt on a set of prespecified closed ports. This is simple and usually reliable, but there are some tricky cases. First of all, this requires using special clients or scripts on the client device (including mobile gadgets or network routers). More significant problem is that all ports and protocols except standard 80 (HTTP) and 443 (HTTPS) can be banned on corporate or ISP firewall, so you can't use 'classic' knocking in this case. So that's why Labean was created.
 
 ### How it works?
-Briefly: there is a front-end web server (like [nginx](http://nginx.org/) or [lighttpd](https://www.lighttpd.net/)) running on your VDS/VPS/etc. and it serves some ordinary web content like cute kittens' videos, Linux distros' ISOs or Wikipedia mirror. But when you want to connect to the hidden service (VPN, proxy, ssh daemon, etc.), you perfrom GET request (using CURL or a web browser) like:
+Briefly: there is a front-end web server (like [nginx](http://nginx.org/) or [lighttpd](https://www.lighttpd.net/)) running on your VDS/VPS/etc. and it serves some ordinary web content like cute kittens' videos, Linux distros' ISOs or Wikipedia mirror. But when you want to connect to the hidden service (VPN, proxy, ssh daemon, etc.), you perform GET request (using CURL or a web browser) like:
 
 `https://someserver.org/secret/vpn/on`,
 
@@ -22,7 +22,7 @@ and the access becomes closed.
 
 Another way is to use *automatic timeout control*.
 
-For example, if you only need to open firewall port temporarly to accept connection, you can set timeout for 30 or 60 seconds. After making GET request you start your client and initiate a connection to the hidden service, then the timeout expires and the rule is deleted. Your established connection is still active, but no one else even from your IP can establish a new one without knocking again.
+For example, if you only need to open firewall port temporarily to accept a connection, you can set a timeout for 30 or 60 seconds. After making GET request you start your client and initiate a connection to the hidden service, then the timeout expires and the rule is deleted. Your established connection is still active, but no one else even from your IP can establish a new one without knocking again.
 
 ### Building and installation
 Labean is written in Go language, so you'll need Golang compiler installed in your system. Please refer to [official Go website](https://golang.org/doc/install) and your distro manpages to get and install Golang compiler. I tried to build Labean with Go 1.6 and 1.10 and everything was fine, perhaps it will work with even older versions.
@@ -35,7 +35,7 @@ go build
 
 If everything is okay, you'll have `labean` binary executable in your current directory.
 
-I recommend to put `labean` binary to `/usr/sbin` directory and `labean.conf` to `/etc/` (see the next chapter about this configuration file).
+I recommend putting `labean` binary to `/usr/sbin` directory and `labean.conf` to `/etc/` (see the next chapter about this configuration file).
 
 Labean can be started simply:
 
@@ -55,15 +55,15 @@ systemctl start labean
 systemctl enable labean
 ```
 
-Another important step of Labean installation is a configuration of  your frontend web server (reverse-proxy). Labean does not support SSL, HTTP auth and serving static or dynamic websites itself. I like "UNIX-way" philosophy: "Make each program do one thing well." So we have to use a web server with Labean. It should perform the following things:
+Another important step of Labean installation is a configuration of your frontend web server (reverse-proxy). Labean does not support SSL, HTTP auth and serving static or dynamic websites itself. I like "UNIX-way" philosophy: "Make each program do one thing well." So we have to use a web server with Labean. It should perform the following things:
 
 - serve HTTPS (SSL) connections with valid certificates
 - require basic HTTP authorization for 'secret' URL
-- add 'X-Real-IP" or similar header to HTTP request
-- pass request to Labean (runnign on another TCP port like 8080) for 'secret' URL
+- add 'X-Real-IP" or similar header to an HTTP request
+- pass the request to Labean (running on another TCP port like 8080) for 'secret' URL
 
-I recommend to use Nginx for this. 
-The simpliest variant of the config you can find it in `examples` directory of the source tree.
+I recommend using Nginx for this.
+The simplest variant of the config you can find it in `examples` directory of the source tree.
 Anyway, you can use any other webservers/reverse-proxies if you want.
 
 ### Config file
