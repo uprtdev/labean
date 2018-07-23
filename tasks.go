@@ -44,6 +44,7 @@ type taskResult struct {
 	StdErr  string `json:"stderr,omitempty"`
 	StdOut  string `json:"stdout,omitempty"`
 	Timeout uint16 `json:"timeoutInSeconds,omitempty"`
+	Ip      string `json:"clientIp"`
 }
 
 func prepareCommand(ip string, ServerIP string, cmd string) string {
@@ -80,6 +81,7 @@ func (c task) Start(env *state, ip string) *taskResult {
 	cmd := prepareCommand(ip, env.config.ServerIP, c.TurnOn)
 	result := runTask(cmd)
 	result.Timeout = c.Timeout
+	result.Ip = ip
 	if result.Retcode == 0 && c.Timeout != 0 {
 		cmd := prepareCommand(ip, env.config.ServerIP, c.TurnOff)
 		env.monitor.ScheduleTaskToStop(cmd, c.Timeout)
@@ -90,6 +92,7 @@ func (c task) Start(env *state, ip string) *taskResult {
 func (c task) Stop(env *state, ip string) *taskResult {
 	cmd := prepareCommand(ip, env.config.ServerIP, c.TurnOff)
 	result := runTask(cmd)
+	result.Ip = ip
 	if result.Retcode == 0 {
 		env.monitor.CancelTask(cmd)
 	}

@@ -74,6 +74,7 @@ Labean config file is a simple JSON document.
   "url_prefix": "secret",
   "external_ip": "192.30.253.113",
   "real_ip_header": "X-Real-IP",
+  "allow_explicit_ips": false,
   "tasks": [ 
     {
       "name": "vpn",
@@ -96,6 +97,7 @@ Here is the description of its fields:
 - `"url_prefix"`: if your reverse-proxy can't rewrite URLs, you can set the prefix to trim;
 - `"external_ip"`: IP of your server. This is not 'must-have' option, its just a sugar to replace {serverIP} in the commands strings if you need;
 - `"real_ip_header"`: the name of HTTP header with the real client IP added by the reverse-proxy (usually it is "X-Real-IP");
+- `"allow_explicit_ips"`: if true, you can explicitly specify client IP address in GET request, like `https://someserver.org/secret/service/off/?ip=123.56.78.9`. This can be helpful when you established VPN connection and later want to manually de-activate secret service using Labean's internal (local) IP inside the tunnel. This feature allows you to stop services started by other users, so use it carefully, and it is disabled by default.
 - `"tasks"`: the array of the 'tasks' to start or stop hidden services;
 - `"name"`: the unique name of the hidden service. You will use it in your HTTP GET queries: `https://someserver.org/secret/<name>/{on|off}`;
 - `"timeout"`: timeout to automatically switch your hidden service or firewall rule "off" after "on". If it is set to 0, it means that timeout feature will be disabled and you need to "off" your service manually;

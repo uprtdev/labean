@@ -70,12 +70,15 @@ func taskHandler(env *state, w http.ResponseWriter, r *http.Request) (result *ta
 	preparedUrl := strings.TrimPrefix(strings.ToLower(r.URL.Path), env.config.UrlPrefix)
 	urlParts := strings.Split(preparedUrl, "/")
 
-	clientIP := strings.Split(r.RemoteAddr, ":")[0]
-	if env.config.RealIPHeader != "" {
-		clientIP = r.Header.Get(env.config.RealIPHeader)
-		if clientIP == "" {
-			genericErr = errors.New("Empty real IP header, looks like you misconfigured your reverse-proxy")
-			return
+	clientIP := r.URL.Query().Get("ip")
+	if len(clientIP) == 0 || env.config.ExplicitIP == false {
+		clientIP = strings.Split(r.RemoteAddr, ":")[0]
+		if env.config.RealIPHeader != "" {
+			clientIP = r.Header.Get(env.config.RealIPHeader)
+			if clientIP == "" {
+				genericErr = errors.New("Empty real IP header, looks like you misconfigured your reverse-proxy")
+				return
+			}
 		}
 	}
 	if net.ParseIP(clientIP) == nil {

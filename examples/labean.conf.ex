@@ -3,6 +3,7 @@
   "url_prefix": "",
   "external_ip": "",
   "real_ip_header": "X-Real-IP",
+  "allow_explicit_ips": false,
   "tasks": [ 
     {
       "name": "vpn",

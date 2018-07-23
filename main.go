@@ -33,8 +33,9 @@ import (
 	"syscall"
 )
 
-const verMajor = 0
-const verMinor = 1
+const verMajor = 1
+const verMinor = 0
+const verFix = 1
 
 type state struct {
 	config  *appConfig
@@ -49,7 +50,7 @@ func printUsage() {
 
 func main() {
 	syslogger, _ := syslog.New(syslog.LOG_INFO, "labean")
-	syslogger.Notice(fmt.Sprintf("Labean %d.%d started.", verMajor, verMinor))
+	syslogger.Notice(fmt.Sprintf("Labean %d.%d.%d started.", verMajor, verMinor, verFix))
 
 	configPath := "./labean.conf"
 

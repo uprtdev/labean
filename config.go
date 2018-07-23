@@ -38,6 +38,7 @@ type appConfig struct {
 	TasksRaw     []task `json:"tasks"`
 	Tasks        map[string]*task
 	UrlPrefix    string `json:"url_prefix"`
+	ExplicitIP   bool   `json:"allow_explicit_ips"`
 }
 
 func loadConfig(filename string) (newConfig *appConfig, err error) {
