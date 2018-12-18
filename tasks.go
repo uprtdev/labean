@@ -49,7 +49,7 @@ type taskResult struct {
 
 func prepareCommand(ip string, ServerIP string, cmd string) string {
 	s := strings.Replace(cmd, "{clientIP}", ip, -1)
-	s = strings.Replace(s, "{ServerIP}", ServerIP, -1)
+	s = strings.Replace(s, "{serverIP}", ServerIP, -1)
 	return s
 }
 
