@@ -38,7 +38,7 @@ type handler struct {
 }
 
 func (h handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
 	taskResult, genericErr := h.H(h.state, w, r)
 	if genericErr != nil {
 		// I know that http.StatusBadRequest has to be here, but frankly speaking I simply like 418 status
