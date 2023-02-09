@@ -25,16 +25,27 @@ package main
 
 import (
 	"bytes"
+	"fmt"
+	"net"
 	"os/exec"
 	"strings"
 	"syscall"
 )
 
+type IpAddrType int64
+
+const (
+	IPv4 IpAddrType = 0
+	IPv6            = 1
+)
+
 type task struct {
-	ID      string `json:"name"`
-	TurnOn  string `json:"on_command"`
-	TurnOff string `json:"off_command"`
-	Timeout uint16 `json:"timeout"`
+	Name        string `json:"name"`
+	TurnOn      string `json:"on_command"`
+	TurnOff     string `json:"off_command"`
+	TurnOnIpV6  string `json:"on_command_v6"`
+	TurnOffIpV6 string `json:"off_command_v6"`
+	Timeout     uint16 `json:"timeout"`
 }
 
 type taskResult struct {
@@ -44,16 +55,35 @@ type taskResult struct {
 	StdErr  string `json:"stderr,omitempty"`
 	StdOut  string `json:"stdout,omitempty"`
 	Timeout uint16 `json:"timeoutInSeconds,omitempty"`
-	Ip      string `json:"clientIp"`
+	Ip      net.IP `json:"clientIp"`
 }
 
-func prepareCommand(ip string, ServerIP string, cmd string) string {
-	s := strings.Replace(cmd, "{clientIP}", ip, -1)
-	s = strings.Replace(s, "{serverIP}", ServerIP, -1)
+func prepareIp(ip net.IP) (net.IP, IpAddrType) {
+	// let's perform conversion first to check if we have IPv4 or IPv6
+	// and second to extract IPv4 from something like "::FFFF:192.168.0.1"
+	ipv4 := ip.To4()
+	if ipv4 == nil {
+		return ip, IPv6
+	} else {
+		return ip.To4(), IPv4
+	}
+}
+
+func generateCommand(ip net.IP, ServerIp net.IP, cmd string) string {
+	s := strings.Replace(cmd, "{clientIP}", ip.String(), -1)
+	s = strings.Replace(s, "{serverIP}", ServerIp.String(), -1)
 	return s
 }
 
-func runTask(cmd string) taskResult {
+func resultCommandMissing(ip net.IP) taskResult {
+	var result taskResult
+	result.Retcode = -1
+	result.Ip = ip
+	result.Err = "No command declared in config for the client's type of IP address"
+	return result
+}
+
+func runCmd(cmd string) taskResult {
 	var outbuf, errbuf bytes.Buffer
 
 	var result taskResult
@@ -77,22 +107,66 @@ func runTask(cmd string) taskResult {
 	return result
 }
 
-func (c task) Start(env *state, ip string) *taskResult {
-	cmd := prepareCommand(ip, env.config.ServerIP, c.TurnOn)
-	result := runTask(cmd)
+func (c task) Start(env *state, ip net.IP) *taskResult {
+	ip, ipType := prepareIp(ip)
+	var cmd string
+	if ipType == IPv4 {
+		if c.TurnOn == "" {
+			result := resultCommandMissing(ip)
+			return &result
+		}
+		if c.Timeout != 0 && c.TurnOff == "" {
+			result := resultCommandMissing(ip)
+			return &result
+		}
+		cmd = generateCommand(ip, env.config.ServerIp, c.TurnOn)
+	} else {
+		if c.TurnOnIpV6 == "" {
+			result := resultCommandMissing(ip)
+			return &result
+		}
+		if c.Timeout != 0 && c.TurnOffIpV6 == "" {
+			result := resultCommandMissing(ip)
+			return &result
+		}
+		cmd = generateCommand(ip, env.config.ServerIpv6, c.TurnOnIpV6)
+	}
+
+	result := runCmd(cmd)
 	result.Timeout = c.Timeout
 	result.Ip = ip
+
+	env.log.Info(fmt.Sprintf("Task start result: %#v", result))
 	if result.Retcode == 0 && c.Timeout != 0 {
-		cmd := prepareCommand(ip, env.config.ServerIP, c.TurnOff)
+		if ipType == IPv4 {
+			cmd = generateCommand(ip, env.config.ServerIp, c.TurnOff)
+		} else {
+			cmd = generateCommand(ip, env.config.ServerIpv6, c.TurnOffIpV6)
+		}
 		env.monitor.ScheduleTaskToStop(cmd, c.Timeout)
 	}
 	return &result
 }
 
-func (c task) Stop(env *state, ip string) *taskResult {
-	cmd := prepareCommand(ip, env.config.ServerIP, c.TurnOff)
-	result := runTask(cmd)
+func (c task) Stop(env *state, ip net.IP) *taskResult {
+	ip, ipType := prepareIp(ip)
+	var cmd string
+	if ipType == IPv4 {
+		if c.TurnOff == "" {
+			result := resultCommandMissing(ip)
+			return &result
+		}
+		cmd = generateCommand(ip, env.config.ServerIp, c.TurnOff)
+	} else {
+		if c.TurnOffIpV6 == "" {
+			result := resultCommandMissing(ip)
+			return &result
+		}
+		cmd = generateCommand(ip, env.config.ServerIpv6, c.TurnOffIpV6)
+	}
+	result := runCmd(cmd)
 	result.Ip = ip
+	env.log.Info(fmt.Sprintf("Task stop result: %#v", result))
 	if result.Retcode == 0 {
 		env.monitor.CancelTask(cmd)
 	}

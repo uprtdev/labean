@@ -24,6 +24,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 )
@@ -33,6 +34,7 @@ type taskMonitor struct {
 	cancelStop   chan scheduledCancel
 	terminate    chan os.Signal
 	queue        []scheduledCancel
+	env          *state
 }
 
 type scheduledCancel struct {
@@ -41,16 +43,18 @@ type scheduledCancel struct {
 	timeout   time.Duration
 }
 
-func newTaskMonitor() *taskMonitor {
+func newTaskMonitor(env *state) *taskMonitor {
 	monitor := taskMonitor{
 		scheduleStop: make(chan scheduledCancel),
 		cancelStop:   make(chan scheduledCancel),
 		terminate:    make(chan os.Signal, 1),
-		queue:        make([]scheduledCancel, 0)}
+		queue:        make([]scheduledCancel, 0),
+		env:          env}
 	return &monitor
 }
 
 func (m taskMonitor) ScheduleTaskToStop(cancelCmd string, timeout uint16) {
+	m.env.log.Info(fmt.Sprintf("Will stop this task in %d seconds", timeout))
 	taskToStop := scheduledCancel{cancelCmd, time.Now(), time.Duration(timeout) * time.Second}
 	m.scheduleStop <- taskToStop
 }
@@ -75,9 +79,10 @@ func (m taskMonitor) Process() {
 			}
 			m.queue = tmp
 		case <-m.terminate:
+			m.env.log.Info("Terminate request received, shutting down tasks...")
 			if len(m.queue) > 0 {
 				for _, p := range m.queue {
-					runTask(p.cmd)
+					runCmd(p.cmd)
 				}
 			}
 			os.Exit(0)
@@ -87,7 +92,8 @@ func (m taskMonitor) Process() {
 				if time.Since(p.startTime) < p.timeout {
 					tmp = append(tmp, p)
 				} else {
-					runTask(p.cmd)
+					stopResult := runCmd(p.cmd)
+					m.env.log.Info(fmt.Sprintf("Stopped the task due to timeout: %#v", stopResult))
 				}
 			}
 			m.queue = tmp

@@ -75,15 +75,16 @@ func main() {
 		syslogger.Warning("So, if your tasks require superuser rights they will not work")
 	}
 
-	monitor := newTaskMonitor()
+	env := &state{config, nil, syslogger}
+	monitor := newTaskMonitor(env)
 	signal.Notify(monitor.terminate, syscall.SIGINT, syscall.SIGTERM)
-	env := &state{config, monitor, syslogger}
+	env.monitor = monitor
 
 	http.Handle("/", handler{env, defaultHandler})
 	for _, cmd := range config.Tasks {
-		url := fmt.Sprintf("%s/%s/", config.UrlPrefix, cmd.ID)
+		url := fmt.Sprintf("%s/%s/", config.UrlPrefix, cmd.Name)
 		http.Handle(url, handler{env, taskHandler})
-		syslogger.Info(fmt.Sprintf("Adding handle for '%s' task... (%s)", cmd.ID, url))
+		syslogger.Info(fmt.Sprintf("Adding handle for '%s' task... (%s)", cmd.Name, url))
 	}
 
 	go monitor.Process()

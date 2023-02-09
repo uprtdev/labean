@@ -70,19 +70,23 @@ func taskHandler(env *state, w http.ResponseWriter, r *http.Request) (result *ta
 	preparedUrl := strings.TrimPrefix(strings.ToLower(r.URL.Path), env.config.UrlPrefix)
 	urlParts := strings.Split(preparedUrl, "/")
 
-	clientIP := r.URL.Query().Get("ip")
-	if len(clientIP) == 0 || env.config.ExplicitIP == false {
-		clientIP = strings.Split(r.RemoteAddr, ":")[0]
+	clientIpStr := r.URL.Query().Get("ip")
+	if len(clientIpStr) == 0 || env.config.ExplicitIP == false {
+		clientIpStr, _, genericErr = net.SplitHostPort(r.RemoteAddr)
+		if genericErr != nil {
+			return
+		}
 		if env.config.RealIPHeader != "" {
-			clientIP = r.Header.Get(env.config.RealIPHeader)
-			if clientIP == "" {
+			clientIpStr = r.Header.Get(env.config.RealIPHeader)
+			if clientIpStr == "" {
 				genericErr = errors.New("Empty real IP header, looks like you misconfigured your reverse-proxy")
 				return
 			}
 		}
 	}
-	if net.ParseIP(clientIP) == nil {
-		genericErr = errors.New("Malformed IP: " + clientIP)
+	clientIp := net.ParseIP(clientIpStr)
+	if clientIp == nil {
+		genericErr = errors.New("Malformed IP: " + clientIpStr)
 		return
 	}
 
@@ -91,17 +95,17 @@ func taskHandler(env *state, w http.ResponseWriter, r *http.Request) (result *ta
 	currentTask := env.config.Tasks[taskName]
 	switch action {
 	case "on":
-		env.log.Info(fmt.Sprintf("Starting '%s' for %s...", currentTask.ID, clientIP))
-		result = currentTask.Start(env, clientIP)
+		env.log.Info(fmt.Sprintf("Starting '%s' for %s...", currentTask.Name, clientIpStr))
+		result = currentTask.Start(env, clientIp)
 	case "off":
-		env.log.Info(fmt.Sprintf("Stopping '%s' for %s by request...", currentTask.ID, clientIP))
-		result = currentTask.Stop(env, clientIP)
+		env.log.Info(fmt.Sprintf("Stopping '%s' for %s by request...", currentTask.Name, clientIpStr))
+		result = currentTask.Stop(env, clientIp)
 	default:
-		env.log.Info(fmt.Sprintf("No action specified, so starting '%s' for %s...", currentTask.ID, clientIP))
-		result = currentTask.Start(env, clientIP)
+		env.log.Info(fmt.Sprintf("No action specified, so starting '%s' for %s...", currentTask.Name, clientIpStr))
+		result = currentTask.Start(env, clientIp)
 	}
 	if result.Retcode != 0 {
-		env.log.Err(fmt.Sprintf("Failed to execute task '%s': %s", currentTask.ID, result.Err))
+		env.log.Err(fmt.Sprintf("Failed to execute task '%s': %s", currentTask.Name, result.Err))
 	}
 	return
 }

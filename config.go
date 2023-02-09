@@ -34,7 +34,8 @@ import (
 type appConfig struct {
 	Listen       string `json:"listen"`
 	RealIPHeader string `json:"real_ip_header"`
-	ServerIP     string `json:"external_ip"`
+	ServerIp     net.IP `json:"external_ip"`
+	ServerIpv6   net.IP `json:"external_ipv6"`
 	TasksRaw     []task `json:"tasks"`
 	Tasks        map[string]*task
 	UrlPrefix    string `json:"url_prefix"`
@@ -52,11 +53,6 @@ func loadConfig(filename string) (newConfig *appConfig, err error) {
 		return
 	}
 
-	if config.ServerIP != "" && net.ParseIP(config.ServerIP) == nil {
-		err = errors.New("Wrong external IP address in config")
-		return
-	}
-
 	if len(config.TasksRaw) == 0 {
 		err = errors.New("No tasks set in config, I have nothing to do")
 		return
@@ -64,15 +60,28 @@ func loadConfig(filename string) (newConfig *appConfig, err error) {
 
 	config.Tasks = make(map[string]*task)
 	for i, cmd := range config.TasksRaw {
-		if cmd.ID == "" {
+		if cmd.Name == "" {
 			err = errors.New("Some tasks' names are missing")
 			return
 		}
-		if strings.Index(cmd.ID, "/") > -1 {
+		if strings.Index(cmd.Name, "/") > -1 {
 			err = errors.New("Task name cannot contain '/' symbol")
 			return
 		}
-		config.Tasks[strings.ToLower(cmd.ID)] = &config.TasksRaw[i]
+		if strings.Contains(cmd.TurnOn, "{serverIP}") || strings.Contains(cmd.TurnOff, "{serverIP}") {
+			if config.ServerIp == nil {
+				err = errors.New("You have {serverIP}, but didn't set 'external_ip' in config")
+				return
+			}
+		}
+		if strings.Contains(cmd.TurnOnIpV6, "{serverIP}") || strings.Contains(cmd.TurnOffIpV6, "{serverIP}") {
+			if config.ServerIpv6 == nil {
+				err = errors.New("You have {serverIP}, but didn't set 'external_ipv6' in config")
+				return
+			}
+		}
+
+		config.Tasks[strings.ToLower(cmd.Name)] = &config.TasksRaw[i]
 	}
 	config.TasksRaw = nil // we don't need it anymore
 

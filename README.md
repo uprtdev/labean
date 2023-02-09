@@ -73,6 +73,7 @@ Labean config file is a simple JSON document.
   "listen": "127.0.0.1:8080",
   "url_prefix": "secret",
   "external_ip": "192.30.253.113",
+  "external_ipv6": "9c49:226f:fd31:bc73:4c84:29ed:13aa:db07",
   "real_ip_header": "X-Real-IP",
   "allow_explicit_ips": false,
   "tasks": [ 
@@ -80,7 +81,9 @@ Labean config file is a simple JSON document.
       "name": "vpn",
       "timeout": 30,
       "on_command": "iptables -t nat -A PREROUTING -p tcp -s {clientIP} --dport 443 -j REDIRECT --to-port 4443",
-      "off_command": "iptables -t nat -D PREROUTING -p tcp -s {clientIP} --dport 443 -j REDIRECT --to-port 4443"
+      "off_command": "iptables -t nat -D PREROUTING -p tcp -s {clientIP} --dport 443 -j REDIRECT --to-port 4443",
+      "on_command_v6": "ip6tables -t nat -A PREROUTING -p tcp -s {clientIP} --dport 443 -j REDIRECT --to-port 4443",
+      "off_command_v6": "ip6tables -t nat -D PREROUTING -p tcp -s {clientIP} --dport 443 -j REDIRECT --to-port 4443"
     },
     {
       "name": "sshd",
@@ -96,13 +99,15 @@ Here is the description of its fields:
 - `"listen"`: IP address and port to listen for incoming connections from reverse proxy;
 - `"url_prefix"`: if your reverse-proxy can't rewrite URLs, you can set the prefix to trim;
 - `"external_ip"`: IP of your server. This is not 'must-have' option, its just a sugar to replace {serverIP} in the commands strings if you need;
+- `"external_ipv6"`: The same, but for IPv6 (if you use it)
 - `"real_ip_header"`: the name of HTTP header with the real client IP added by the reverse-proxy (usually it is "X-Real-IP");
 - `"allow_explicit_ips"`: if true, you can explicitly specify client IP address in GET request, like `https://someserver.org/secret/service/off/?ip=123.56.78.9`. This can be helpful when you established VPN connection and later want to manually de-activate secret service using Labean's internal (local) IP inside the tunnel. This feature allows you to stop services started by other users, so use it carefully, and it is disabled by default.
 - `"tasks"`: the array of the 'tasks' to start or stop hidden services;
 - `"name"`: the unique name of the hidden service. You will use it in your HTTP GET queries: `https://someserver.org/secret/<name>/{on|off}`;
 - `"timeout"`: timeout to automatically switch your hidden service or firewall rule "off" after "on". If it is set to 0, it means that timeout feature will be disabled and you need to "off" your service manually;
 - `"on_command"`: command line to start your service or activate firewall rule. You can use `{serverIP}` and `{clientIP}` macro in it, they will be automatically replaced by the corresponding values;
-- `"off_comand"`: the same as `"on_command"`, but does exactly the opposite thing :)
+- `"off_command"`: the same as `"on_command"`, but does exactly the opposite thing :)
+- `"on_command_v6"` and `"off_command_v6"`: same as above, but for IPv6 (if you use it)
 
 ### Bugs and ideas?
 Feel free to open Issues on Github or make pull requests if you want to improve something. I will be grateful for any help and feedback.
@@ -110,5 +115,5 @@ Feel free to open Issues on Github or make pull requests if you want to improve 
 ### License
 Labean has BSD 2-Clause "Simplified" License.
 
-Copyright (c) 2018, Kirill Ovchinnikov
+Copyright (c) 2018-2023, Kirill Ovchinnikov
 
