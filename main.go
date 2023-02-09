@@ -34,8 +34,8 @@ import (
 )
 
 const verMajor = 1
-const verMinor = 0
-const verFix = 1
+const verMinor = 1
+const verFix = 0
 
 type state struct {
 	config  *appConfig
