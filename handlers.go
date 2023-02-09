@@ -67,8 +67,8 @@ func defaultHandler(env *state, w http.ResponseWriter, r *http.Request) (result 
 }
 
 func taskHandler(env *state, w http.ResponseWriter, r *http.Request) (result *taskResult, genericErr error) {
-	preparedUrl := strings.TrimPrefix(strings.ToLower(r.URL.Path), env.config.UrlPrefix)
-	urlParts := strings.Split(preparedUrl, "/")
+	preparedUrl := strings.TrimPrefix(r.URL.Path, env.config.UrlPrefix)
+	urlParts := strings.Split(strings.ToLower(preparedUrl), "/")
 
 	clientIpStr := r.URL.Query().Get("ip")
 	if len(clientIpStr) == 0 || env.config.ExplicitIP == false {
