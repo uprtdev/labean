@@ -10,7 +10,7 @@ Another purpose is to disguise some services (e.g. VPN or proxy) running on the 
 Classic implementations of port knockers (like [knockd](http://www.zeroflux.org/projects/knock)) allow a client to open port or start services by generating a connection attempt on a set of prespecified closed ports. This is simple and usually reliable, but there are some tricky cases. First of all, this requires using special clients or scripts on the client device (including mobile gadgets or network routers). More significant problem is that all ports and protocols except standard 80 (HTTP) and 443 (HTTPS) can be banned on corporate or ISP firewall, so you can't use 'classic' knocking in this case. So that's why Labean was created.
 
 ### How it works?
-Briefly: there is a front-end web server (like [nginx](http://nginx.org/) or [lighttpd](https://www.lighttpd.net/)) running on your VDS/VPS/etc. and it serves some ordinary web content like cute kittens' videos, Linux distros' ISOs or Wikipedia mirror. But when you want to connect to the hidden service (VPN, proxy, ssh daemon, etc.), you perform GET request (using CURL or a web browser) like:
+Briefly: there is a front-end web server (like [nginx](http://nginx.org/) or [caddy](https://caddyserver.com/)) running on your VDS/VPS/etc. and it serves some ordinary web content like cute kittens' videos, Linux distros' ISOs or Wikipedia mirror. But when you want to connect to the hidden service (VPN, proxy, ssh daemon, etc.), you perform GET request (using CURL or a web browser) like:
 
 `https://someserver.org/secret/vpn/on`,
 
@@ -62,7 +62,7 @@ Another important step of Labean installation is a configuration of your fronten
 - add 'X-Real-IP" or similar header to an HTTP request
 - pass the request to Labean (running on another TCP port like 8080) for 'secret' URL
 
-I recommend using Nginx for this.
+I recommend using Caddy or Nginx for this.
 The simplest variant of the config you can find it in `examples` directory of the source tree.
 Anyway, you can use any other webservers/reverse-proxies if you want.
 
@@ -96,12 +96,12 @@ Labean config file is a simple JSON document.
 ```
 
 Here is the description of its fields:
-- `"listen"`: IP address and port to listen for incoming connections from reverse proxy;
-- `"url_prefix"`: if your reverse-proxy can't rewrite URLs, you can set the prefix to trim;
+- `"listen"`: IP address and port to listen for incoming connections from reverse proxy; 127.0.0.1 for IPv4 localhost, ::1 for IPv6 localhost, and so on;
+- `"url_prefix"`: if your reverse-proxy can't rewrite URLs, you can set the prefix to trim; if your reverse-proxy performs trimming, leave it empty;
 - `"external_ip"`: IP of your server. This is not 'must-have' option, its just a sugar to replace {serverIP} in the commands strings if you need;
 - `"external_ipv6"`: The same, but for IPv6 (if you use it)
-- `"real_ip_header"`: the name of HTTP header with the real client IP added by the reverse-proxy (usually it is "X-Real-IP");
-- `"allow_explicit_ips"`: if true, you can explicitly specify client IP address in GET request, like `https://someserver.org/secret/service/off/?ip=123.56.78.9`. This can be helpful when you established VPN connection and later want to manually de-activate secret service using Labean's internal (local) IP inside the tunnel. This feature allows you to stop services started by other users, so use it carefully, and it is disabled by default.
+- `"real_ip_header"`: the name of HTTP header with the real client IP added by the reverse-proxy (usually it is "X-Real-IP" or "X-Forwarded-For"); leave it empty if you don't use reverse-proxy;
+- `"allow_explicit_ips"`: if true, you can explicitly specify client IP address in GET request, like `https://someserver.org/secret/service/off/?ip=123.56.78.9`. This can be helpful when you established VPN connection and later want to manually de-activate secret service using Labean's internal (local) IP inside the tunnel. This feature allows you to stop services started by other users, so use it very carefully, and it is disabled by default.
 - `"tasks"`: the array of the 'tasks' to start or stop hidden services;
 - `"name"`: the unique name of the hidden service. You will use it in your HTTP GET queries: `https://someserver.org/secret/<name>/{on|off}`;
 - `"timeout"`: timeout to automatically switch your hidden service or firewall rule "off" after "on". If it is set to 0, it means that timeout feature will be disabled and you need to "off" your service manually;

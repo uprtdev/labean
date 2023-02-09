@@ -7,6 +7,7 @@ server {
   root /srv/www/funny_kittens/;
   index index.html;
 
+  # this will trim "secret" from your URL, so leave "url_prefix" empty in Labean config
   location ~ ^/secret/(.*) {
     auth_basic      "Administrator Login";
     auth_basic_user_file  /var/www/.htpasswd;
