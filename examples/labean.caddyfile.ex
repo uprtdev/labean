@@ -5,7 +5,7 @@ yourdomain.com {
         reverse_proxy http://127.0.0.1:8080
         basicauth {
             # see https://caddyserver.com/docs/caddyfile/directives/basicauth
-		    Bob JDJhJDEwJEVCNmdaNEg2Ti5iejRMYkF3MFZhZ3VtV3E1SzBWZEZ5Q3VWc0tzOEJwZE9TaFlZdEVkZDhX
+            Bob JDJhJDEwJEVCNmdaNEg2Ti5iejRMYkF3MFZhZ3VtV3E1SzBWZEZ5Q3VWc0tzOEJwZE9TaFlZdEVkZDhX
         }
     }	
     handle {
