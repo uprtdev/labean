@@ -91,7 +91,7 @@ Labean config file is a simple JSON document.
       "on_command": "/etc/init.d/sshd start",
       "off_command": "/etc/init.d/sshd stop"
     }
-    ]
+  ]
 }
 ```
 
