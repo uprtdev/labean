@@ -12,7 +12,7 @@ server {
     auth_basic      "Administrator Login";
     auth_basic_user_file  /var/www/.htpasswd;
     proxy_set_header  X-Real-IP  $remote_addr;
-    proxy_pass http://127.0.0.1:8080/$1;
+    proxy_pass http://127.0.0.1:8080/$1$is_args$args;
   }
 }
                                   
